@@ -1,5 +1,36 @@
 # Progress Log
 
+## 2026-02-10 - Task 30: 响应式设计
+
+### What was done:
+- 更新 components/layout/Header.tsx 导航栏组件
+  - 添加移动端汉堡菜单
+  - 使用 useState 管理菜单状态
+  - 移动端显示完整的导航和认证选项
+  - 点击菜单项后自动关闭菜单
+- 响应式布局检查和确认：
+  - 项目卡片使用 grid gap-6 sm:grid-cols-2 lg:grid-cols-3
+  - 分镜卡片在移动端单列显示
+  - 阶段指示器有桌面端和移动端两种布局
+  - 表单组件在小屏幕上垂直排列
+  - 创建项目表单风格选择器响应式布局
+
+### Testing:
+- 运行 npm run lint 通过
+- 运行 npm run build 构建成功
+- ✅ 浏览器测试通过（使用 MCP Playwright）：
+  - 移动端 (375x667) 汉堡菜单正常工作
+  - 移动端项目列表单列显示
+  - 移动端导航菜单显示正确
+  - 移动端按钮和表单响应式布局正确
+
+### Notes:
+- Header 组件现在是客户端组件（使用 useState）
+- 响应式断点使用 Tailwind CSS 的 sm/md/lg 断点
+- 阶段指示器在移动端显示为进度条形式
+
+---
+
 ## 2026-02-10 - Task 29: Loading 状态
 
 ### What was done:
