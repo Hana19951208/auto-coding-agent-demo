@@ -1,5 +1,28 @@
 # Progress Log
 
+## 2026-02-10 - Bug Fix: 强制使用 dark mode
+
+### 问题描述:
+应用有时候显示 light mode，有时候显示 dark mode，用户希望固定使用 dark mode。
+
+### 根本原因:
+`layout.tsx` 中的 `<html>` 元素没有设置 `className="dark"`，导致 Tailwind CSS 的 dark mode 不稳定。
+
+### What was done:
+- 修改 `app/layout.tsx` 中的 `<html>` 元素
+- 添加 `className="dark"` 属性
+- 确保应用始终使用深色模式
+
+### Testing:
+- ✅ npm run lint 通过
+- ✅ 浏览器测试确认深色模式固定
+
+### Notes:
+- Tailwind CSS 使用 class 策略进行 dark mode 切换
+- 在 html 元素上设置 `class="dark"` 会强制所有页面使用深色模式
+
+---
+
 ## 2026-02-10 - Bug Fix: 确认所有分镜后不跳转到图片生成阶段
 
 ### 问题描述:
