@@ -1,5 +1,25 @@
 # Progress Log
 
+## 2026-02-10 - Bug Fix: 确认所有分镜后不跳转到图片生成阶段
+
+### 问题描述:
+点击"确认所有分镜"后，页面没有跳转到第三步（图片生成阶段）。
+
+### 根本原因:
+`handleConfirmAll` 函数只更新了本地 React 状态，没有刷新页面来获取更新后的项目阶段。
+
+### What was done:
+- 修改 `SceneDescriptionList.tsx` 中的 `handleConfirmAll` 函数
+- 确认成功后使用 `window.location.reload()` 刷新页面
+- 移除 `finally` 块中的 `setIsConfirmingAll(false)`（页面会刷新，不需要重置状态）
+
+### Testing:
+- ✅ 点击"确认所有分镜"后页面刷新
+- ✅ 阶段指示器正确显示当前阶段（图片）
+- ✅ 页面内容切换到图片生成界面
+
+---
+
 ## 2026-02-10 - Bug Fix: "生成分镜"按钮无响应
 
 ### 问题描述:
