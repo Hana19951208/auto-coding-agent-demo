@@ -1,5 +1,30 @@
 # Progress Log
 
+## 2026-02-10 - Task 27: 项目详情页 - 实时状态更新
+
+### What was done:
+此任务的功能已在 Task 24 和 Task 25 中实现：
+
+- 实现轮询机制检查图片/视频生成状态
+  - pollForImageCompletion() - 检查图片生成状态
+  - pollForVideoCompletion() - 检查视频生成状态
+- 每 5 秒轮询一次（const interval = 5000）
+- 状态变化时自动更新 UI（使用 setLocalScenes 更新 React 状态）
+- 显示进度动画（使用 animate-spin 类的旋转动画）
+- 图片生成超时 5 分钟（60 次尝试）
+- 视频生成超时 10 分钟（120 次尝试）
+
+### Testing:
+- 轮询机制在 Task 24 和 Task 25 的浏览器测试中已验证
+- 动画效果在浏览器中正确显示
+
+### Notes:
+- 轮询机制在客户端组件中实现
+- 轮询完成后自动更新本地状态
+- 失败状态也会被正确处理
+
+---
+
 ## 2026-02-10 - Task 26: 项目详情页 - 完成状态
 
 ### What was done:
