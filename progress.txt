@@ -1,5 +1,35 @@
 # Progress Log
 
+## 2026-02-10 - Bug Fix: "生成分镜"按钮无响应
+
+### 问题描述:
+新建项目后点击"生成分镜"按钮没有任何反应。
+
+### 根本原因:
+项目详情页是服务端组件，"生成分镜"按钮是普通 HTML button，没有 onClick 事件处理。
+
+### What was done:
+1. **components/scene/DraftStageView.tsx** - 创建客户端组件:
+   - 添加 onClick 事件处理调用 `/api/generate/scenes` API
+   - 显示加载状态 ("生成中...")
+   - 错误处理和显示
+   - 生成成功后刷新页面
+
+2. **app/projects/[id]/page.tsx** - 更新导入和使用新组件
+
+### Testing:
+- ✅ npm run lint 通过
+- ✅ 浏览器测试通过：
+  - 点击"生成分镜"按钮后显示"生成中..."
+  - 生成成功后页面刷新显示分镜列表
+  - 6个分镜描述正确生成
+
+### Notes:
+- DraftStageView 是客户端组件（"use client"）
+- 生成完成后使用 window.location.reload() 刷新页面
+
+---
+
 ## 2026-02-10 - Bug Fix: 视频生成轮询机制修复
 
 ### 问题描述:
