@@ -1,5 +1,36 @@
 # Progress Log
 
+## 2026-02-10 - Task 26: 项目详情页 - 完成状态
+
+### What was done:
+- 创建 components/scene/CompletedProjectView.tsx 完成状态视图组件
+  - 显示项目完成信息和完成时间
+  - 显示所有分镜的视频预览缩略图
+  - 点击缩略图可在主视频播放器中播放
+  - 每个视频可单独下载
+  - "下载所有视频"按钮批量下载
+  - 显示所有分镜列表
+- 更新 app/projects/[id]/page.tsx 项目详情页
+  - 在 completed 阶段显示 CompletedProjectView 组件
+
+### Testing:
+- 运行 npm run lint 通过
+- 运行 npm run build 构建成功
+- ✅ 浏览器测试通过（使用 MCP Playwright）：
+  - 完成状态正确显示
+  - 阶段指示器显示所有阶段已完成
+  - 视频缩略图正确显示
+  - 分镜列表正确显示
+  - 下载按钮正常显示
+
+### Notes:
+- 视频下载使用 HTML a 标签的 download 属性
+- 批量下载时每个视频之间有 500ms 延迟
+- 缩略图使用 video 元素显示第一帧
+- 主视频播放器支持自动播放
+
+---
+
 ## 2026-02-10 - Task 25: 项目详情页 - 视频生成阶段
 
 ### What was done:

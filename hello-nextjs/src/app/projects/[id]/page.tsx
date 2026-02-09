@@ -3,6 +3,7 @@ import { StageIndicator } from "@/components/project/StageIndicator";
 import { SceneDescriptionList } from "@/components/scene/SceneDescriptionList";
 import { SceneImageList } from "@/components/scene/SceneImageList";
 import { SceneVideoList } from "@/components/scene/SceneVideoList";
+import { CompletedProjectView } from "@/components/scene/CompletedProjectView";
 import { createClient } from "@/lib/supabase/server";
 import { getProjectById } from "@/lib/db/projects";
 import { redirect, notFound } from "next/navigation";
@@ -197,9 +198,10 @@ export default async function ProjectDetailPage({
             )}
 
             {project.stage === "completed" && (
-              <div className="py-4 text-center text-zinc-600 dark:text-zinc-400">
-                <p>项目完成展示将在 Task 26 中实现</p>
-              </div>
+              <CompletedProjectView
+                scenes={project.scenes}
+                completedAt={project.updated_at}
+              />
             )}
           </div>
         </div>
