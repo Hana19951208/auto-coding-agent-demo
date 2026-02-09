@@ -1,5 +1,37 @@
 # Progress Log
 
+## 2026-02-09 - Task: 项目架构设计和任务拆解
+
+### What was done:
+- 创建 architecture.md 架构设计文档，包含：
+  - 系统架构图（Next.js + Supabase + 外部AI服务）
+  - 核心业务流程图（含用户确认步骤）
+  - 数据模型设计（projects, scenes, images, videos）
+  - API 设计（项目、分镜、生成、确认）
+  - 外部 API 集成详情（智谱AI GLM、火山引擎 Seedream/Seedance）
+- 更新 task.json，拆解为 31 个详细任务：
+  - 基础配置 (1-3)
+  - 用户认证 (4-7)
+  - AI 服务封装 (8-10)
+  - 数据访问层 (11-13)
+  - API 实现 (14-18)
+  - 前端 UI (19-27)
+  - 优化收尾 (28-31)
+- 关键设计决策：每一步生成都需要用户确认
+  - 分镜描述 → 用户确认 → 生成图片 → 用户确认 → 生成视频 → 用户确认 → 完成
+
+### Testing:
+- 架构设计经用户确认
+- 任务列表经用户确认
+
+### Notes:
+- 技术栈：Next.js 14+, Supabase (Auth + DB + Storage), 智谱AI GLM-4.7, 火山引擎 Seedream/Seedance
+- 用户确认流程是核心特性，每个阶段都可以重新生成
+- 数据库字段包含确认状态：description_confirmed, image_confirmed, video_confirmed
+- 项目阶段：draft → scenes → images → videos → completed
+
+---
+
 ## 2026-02-09 - Task: Project infrastructure setup
 
 ### What was done:
