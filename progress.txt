@@ -1,5 +1,39 @@
 # Progress Log
 
+## 2026-02-10 - Task 16: 生成 API - 图片生成
+
+### What was done:
+- 创建 app/api/generate/image/[sceneId]/route.ts 单个分镜图片生成 API
+  - POST /api/generate/image/:sceneId 为单个分镜生成图片
+  - 调用火山引擎图片生成 API（描述+风格）
+  - 删除旧图片后上传新图片到 Supabase Storage
+  - 保存图片记录到数据库
+  - 更新分镜 image_status 为 'completed'
+  - 验证分镜描述已确认才能生成
+- 创建 app/api/generate/images/route.ts 批量生成 API
+  - POST /api/generate/images 批量生成所有分镜图片
+  - 遍历所有 description_confirmed=true 且 image_status=pending 的分镜
+  - 顺序生成图片（可后续优化为并行）
+  - 更新项目 stage 为 'images'
+  - 返回生成结果统计
+
+### Testing:
+- 运行 npm run lint 通过
+- 运行 npm run build 构建成功
+- API 端点已注册：
+  - ƒ /api/generate/image/[sceneId]
+  - ƒ /api/generate/images
+
+### Notes:
+- 图片服务未配置时返回 503 错误
+- 分镜描述未确认返回 400 错误
+- 生成失败时自动更新状态为 'failed'
+- 图片使用 1024x1024 尺寸，PNG 格式
+- 文件命名格式：scene-{order_index}-{timestamp}.png
+- Storage 路径格式：{userId}/{projectId}/{fileName}
+
+---
+
 ## 2026-02-10 - Task 15: 生成 API - 分镜描述生成
 
 ### What was done:
