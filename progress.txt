@@ -1,5 +1,36 @@
 # Progress Log
 
+## 2026-02-10 - Task: 用户认证 - 注册页面
+
+### What was done:
+- 创建 app/register/page.tsx 注册页面
+  - 居中布局，包含标题和副标题
+  - 显示 RegisterForm 组件
+- 创建 components/auth/RegisterForm.tsx 注册表单组件
+  - 邮箱、密码、确认密码输入框
+  - 使用 Supabase Auth 进行邮箱+密码注册
+  - 密码验证：检查两次密码是否一致、密码长度至少6位
+  - 注册成功后显示成功提示，2秒后跳转到登录页
+  - 显示错误信息（支持中文翻译常见错误）
+  - 注册按钮带加载状态
+  - 包含登录链接
+
+### Testing:
+- 运行 npm run lint 通过
+- 运行 npm run build 构建成功
+- 浏览器测试通过：
+  - ✅ 页面正确渲染
+  - ✅ 密码不一致错误 "两次输入的密码不一致"
+  - ✅ 密码太短错误 "密码长度至少为6位"
+  - ✅ 导航到登录页面正常工作
+
+### Notes:
+- 使用 Supabase signUp 进行注册
+- 错误信息已本地化为中文
+- 表单使用 Tailwind CSS 样式，与登录页面保持一致
+
+---
+
 ## 2026-02-10 - Supabase 配置完成 + Task 4 最终验证
 
 ### Supabase 配置步骤（人工完成）:
