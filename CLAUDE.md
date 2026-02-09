@@ -64,21 +64,25 @@ Write your work to `progress.txt`:
 - [any relevant notes for future agents]
 ```
 
-### Step 6: Commit Changes
+### Step 6: Commit Changes (包含 task.json 更新)
+
+**IMPORTANT: 所有更改必须在同一个 commit 中提交，包括 task.json 的更新！**
+
+流程：
+1. 更新 `task.json`，将任务的 `passes` 从 `false` 改为 `true`
+2. 更新 `progress.txt` 记录工作内容
+3. 一次性提交所有更改：
 
 ```bash
 git add .
 git commit -m "[task description] - completed"
 ```
 
-### Step 7: Mark Task Complete
-
-In `task.json`, change the task's `passes` from `false` to `true`.
-
-**IMPORTANT:**
-- Only mark `passes: true` after ALL steps are verified
-- Never delete or modify task descriptions
-- Never remove tasks from the list
+**规则:**
+- 只有在所有步骤都验证通过后才标记 `passes: true`
+- 永远不要删除或修改任务描述
+- 永远不要从列表中移除任务
+- **一个 task 的所有内容（代码、progress.txt、task.json）必须在同一个 commit 中提交**
 
 ---
 
@@ -119,5 +123,5 @@ npm run lint     # Run linter
 1. **One task per session** - Focus on completing one task well
 2. **Test before marking complete** - All steps must pass
 3. **Document in progress.txt** - Help future agents understand your work
-4. **Commit your changes** - Keep git history clean
+4. **One commit per task** - 所有更改（代码、progress.txt、task.json）必须在同一个 commit 中提交
 5. **Never remove tasks** - Only flip `passes: false` to `true`
