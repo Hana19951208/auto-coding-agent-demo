@@ -1,5 +1,48 @@
 # Progress Log
 
+## 2026-02-10 - Task 6 & 7: 用户认证 - 登出功能 + 认证保护中间件
+
+### What was done:
+**Task 6 - 登出功能:**
+- 创建 components/auth/LogoutButton.tsx 登出按钮组件
+  - 使用 Supabase Auth signOut 进行登出
+  - 登出后跳转到登录页
+  - 按钮带加载状态显示 "登出中..."
+
+**Task 7 - 认证保护中间件:**
+- 中间件已在 Task 3 中实现，本次进行验证
+- 保护路由: /projects, /create
+- 未登录用户访问受保护页面时重定向到 /login（带 redirect 参数）
+- 已登录用户访问 /login 和 /register 时重定向到首页
+
+**额外创建的组件:**
+- 创建 components/layout/Header.tsx 导航栏组件
+  - 显示网站名称和导航链接
+  - 已登录用户显示邮箱和登出按钮
+  - 未登录用户显示登录/注册链接
+- 更新 app/page.tsx 首页
+  - 显示欢迎信息和产品介绍
+  - 根据登录状态显示不同内容
+- 创建 app/projects/page.tsx 项目列表页（占位）
+- 创建 app/create/page.tsx 创建项目页（占位）
+
+### Testing:
+- 运行 npm run lint 通过
+- 运行 npm run build 构建成功
+- 浏览器测试通过（使用 MCP Playwright）：
+  - ✅ 未登录访问 /projects 重定向到 /login?redirect=/projects
+  - ✅ 登录成功后可以访问 /projects
+  - ✅ 点击登出按钮后跳转到 /login
+  - ✅ 已登录访问 /login 重定向到首页
+  - ✅ 已登录访问 /register 重定向到首页
+
+### Notes:
+- 中间件保护逻辑在 Task 3 时已实现，本次主要是验证功能
+- Header 组件用于统一导航和测试登出功能
+- projects 和 create 页面为占位页面，后续任务会完善
+
+---
+
 ## 2026-02-10 - Task: 用户认证 - 注册页面
 
 ### What was done:
