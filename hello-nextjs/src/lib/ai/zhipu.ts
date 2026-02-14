@@ -11,9 +11,12 @@ import type {
 } from "@/types/ai";
 
 // Configuration
-const ZHIPU_API_KEY = process.env.ZHIPU_API_KEY;
-const ZHIPU_BASE_URL = process.env.ZHIPU_BASE_URL || "https://open.bigmodel.cn/api/paas/v4";
-const ZHIPU_MODEL = process.env.ZHIPU_MODEL || "glm-4";
+const AI_API_KEY = process.env.DEEPSEEK_API_KEY || process.env.ZHIPU_API_KEY;
+const AI_BASE_URL =
+  process.env.DEEPSEEK_BASE_URL ||
+  process.env.ZHIPU_BASE_URL ||
+  "https://api.deepseek.com/v1";
+const AI_MODEL = process.env.DEEPSEEK_MODEL || process.env.ZHIPU_MODEL || "deepseek-chat";
 
 // Retry configuration
 const MAX_RETRIES = 3;
@@ -45,7 +48,7 @@ function sleep(ms: number): Promise<void> {
  * Check if the API key is configured
  */
 export function isZhipuConfigured(): boolean {
-  return !!ZHIPU_API_KEY;
+  return !!AI_API_KEY;
 }
 
 /**
@@ -147,12 +150,12 @@ async function chatCompletion(
     maxTokens?: number;
   } = {}
 ): Promise<ZhipuChatCompletionResponse> {
-  if (!ZHIPU_API_KEY) {
-    throw new ZhipuApiError("ZHIPU_API_KEY is not configured");
+  if (!AI_API_KEY) {
+    throw new ZhipuApiError("DEEPSEEK_API_KEY is not configured");
   }
 
   const requestBody = {
-    model: ZHIPU_MODEL,
+    model: AI_MODEL,
     messages,
     temperature: options.temperature ?? 0.7,
     max_tokens: options.maxTokens ?? 4096,
@@ -166,11 +169,11 @@ async function chatCompletion(
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await fetch(`${ZHIPU_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${ZHIPU_API_KEY}`,
+          Authorization: `Bearer ${AI_API_KEY}`,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,

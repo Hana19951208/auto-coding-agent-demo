@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { SceneImageCard } from "./SceneImageCard";
 import { useSignedUrls } from "@/hooks/useSignedUrls";
 import type { Scene, Image as ImageType } from "@/types/database";
@@ -21,16 +21,39 @@ export function SceneImageList({ projectId, scenes }: SceneImageListProps) {
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isConfirmingAll, setIsConfirmingAll] = useState(false);
 
-  // Resume polling for any images that are still processing when component mounts
+  // Keep local state in sync with fresh server props.
   useEffect(() => {
-    localScenes.forEach((scene) => {
-      if (scene.image_status === "processing") {
-        // Resume polling for this image
-        pollForImageCompletion(scene.id);
-      }
+    setLocalScenes(scenes);
+  }, [scenes]);
+
+  const refreshProjectScenes = useCallback(async () => {
+    const response = await fetch(`/api/projects/${projectId}?_ts=${Date.now()}`, {
+      cache: "no-store",
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
+    if (!response.ok) return;
+
+    const { project } = await response.json();
+    const nextScenes = (project.scenes as SceneWithImages[]).sort(
+      (a, b) => a.order_index - b.order_index
+    );
+    setLocalScenes(nextScenes);
+  }, [projectId]);
+
+  // Unified polling: when any scene is processing, keep refreshing until all finished.
+  useEffect(() => {
+    const hasProcessing = localScenes.some(
+      (scene) => scene.image_status === "processing"
+    );
+    if (!hasProcessing) return;
+
+    const timer = setInterval(() => {
+      refreshProjectScenes().catch((error) => {
+        console.error("Failed to refresh image progress:", error);
+      });
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [localScenes, refreshProjectScenes]);
 
   // Collect all storage paths for images
   const storagePaths = useMemo(() => {
@@ -50,63 +73,32 @@ export function SceneImageList({ projectId, scenes }: SceneImageListProps) {
   const canConfirmAll = completedCount === localScenes.length && !allConfirmed;
 
   const handleGenerateImage = async (sceneId: string) => {
-    const response = await fetch(`/api/generate/image/${sceneId}`, {
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error ?? "Failed to generate image");
-    }
-
-    // Update local state to show processing
     setLocalScenes((prev) =>
       prev.map((s) =>
         s.id === sceneId ? { ...s, image_status: "processing" } : s
       )
     );
 
-    // Poll for completion (simple approach)
-    pollForImageCompletion(sceneId);
-  };
+    const response = await fetch(`/api/generate/image/${sceneId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ projectId }),
+    });
 
-  const pollForImageCompletion = async (sceneId: string) => {
-    const maxAttempts = 60; // 5 minutes max
-    const interval = 5000; // 5 seconds
-
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((resolve) => setTimeout(resolve, interval));
-
-      try {
-        const response = await fetch(`/api/projects/${projectId}`);
-        if (!response.ok) continue;
-
-        const { project } = await response.json();
-        const scene = project.scenes.find((s: SceneWithImages) => s.id === sceneId);
-
-        if (scene?.image_status === "completed") {
-          setLocalScenes((prev) =>
-            prev.map((s) =>
-              s.id === sceneId
-                ? { ...s, image_status: "completed", images: scene.images }
-                : s
-            )
-          );
-          return;
-        }
-
-        if (scene?.image_status === "failed") {
-          setLocalScenes((prev) =>
-            prev.map((s) =>
-              s.id === sceneId ? { ...s, image_status: "failed" } : s
-            )
-          );
-          return;
-        }
-      } catch (error) {
-        console.error("Poll error:", error);
-      }
+    if (!response.ok) {
+      const data = await response.json();
+      setLocalScenes((prev) =>
+        prev.map((s) =>
+          s.id === sceneId ? { ...s, image_status: "failed" } : s
+        )
+      );
+      throw new Error(data.error ?? "Failed to generate image");
     }
+
+    // Ensure latest image/status is reflected without manual refresh.
+    await refreshProjectScenes();
   };
 
   const handleConfirmImage = async (sceneId: string) => {
@@ -128,6 +120,16 @@ export function SceneImageList({ projectId, scenes }: SceneImageListProps) {
   const handleGenerateAll = async () => {
     setIsGeneratingAll(true);
     try {
+      // Optimistically mark all eligible scenes as processing so users see progress immediately.
+      setLocalScenes((prev) =>
+        prev.map((scene) =>
+          scene.description_confirmed &&
+          (scene.image_status === "pending" || scene.image_status === "failed")
+            ? { ...scene, image_status: "processing" }
+            : scene
+        )
+      );
+
       const response = await fetch("/api/generate/images", {
         method: "POST",
         headers: {
@@ -140,19 +142,10 @@ export function SceneImageList({ projectId, scenes }: SceneImageListProps) {
         throw new Error("Failed to generate images");
       }
 
-      // Start polling for all scenes
-      localScenes.forEach((scene) => {
-        if (scene.image_status === "pending") {
-          setLocalScenes((prev) =>
-            prev.map((s) =>
-              s.id === scene.id ? { ...s, image_status: "processing" } : s
-            )
-          );
-          pollForImageCompletion(scene.id);
-        }
-      });
+      await refreshProjectScenes();
     } catch (error) {
       console.error("Failed to generate all images:", error);
+      await refreshProjectScenes();
     } finally {
       setIsGeneratingAll(false);
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { SceneVideoCard } from "./SceneVideoCard";
 import { useSignedUrls } from "@/hooks/useSignedUrls";
 import type { Scene, Image as ImageType, Video } from "@/types/database";
@@ -21,6 +21,23 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [isConfirmingAll, setIsConfirmingAll] = useState(false);
 
+  useEffect(() => {
+    setLocalScenes(scenes);
+  }, [scenes]);
+
+  const refreshProjectScenes = useCallback(async () => {
+    const response = await fetch(`/api/projects/${projectId}?_ts=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return;
+
+    const { project } = await response.json();
+    const nextScenes = (project.scenes as SceneWithMedia[]).sort(
+      (a, b) => a.order_index - b.order_index
+    );
+    setLocalScenes(nextScenes);
+  }, [projectId]);
+
   // Resume polling for any videos that are still processing when component mounts
   useEffect(() => {
     localScenes.forEach((scene) => {
@@ -33,7 +50,7 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
+  }, [projectId]); // Resume when entering this project page
 
   // Collect all storage paths for images and videos
   const storagePaths = useMemo(() => {
@@ -60,6 +77,12 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
   const canConfirmAll = completedCount === localScenes.length && !allConfirmed;
 
   const handleGenerateVideo = async (sceneId: string) => {
+    setLocalScenes((prev) =>
+      prev.map((s) =>
+        s.id === sceneId ? { ...s, video_status: "processing" } : s
+      )
+    );
+
     const response = await fetch(`/api/generate/video/scene/${sceneId}`, {
       method: "POST",
       headers: {
@@ -70,6 +93,11 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
 
     if (!response.ok) {
       const data = await response.json();
+      setLocalScenes((prev) =>
+        prev.map((s) =>
+          s.id === sceneId ? { ...s, video_status: "failed" } : s
+        )
+      );
       throw new Error(data.error ?? "Failed to generate video");
     }
 
@@ -101,7 +129,8 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
       try {
         // Call video task status API to check and download video
         const statusResponse = await fetch(
-          `/api/generate/video/task/${taskId}?sceneId=${sceneId}&projectId=${projectId}&videoId=${videoId}`
+          `/api/generate/video/task/${taskId}?sceneId=${sceneId}&projectId=${projectId}&videoId=${videoId}&_ts=${Date.now()}`,
+          { cache: "no-store" }
         );
 
         if (!statusResponse.ok) continue;
@@ -109,28 +138,7 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
         const statusData = await statusResponse.json();
 
         if (statusData.status === "completed") {
-          // Fetch updated project data to get the video URL
-          const projectResponse = await fetch(`/api/projects/${projectId}`);
-          if (projectResponse.ok) {
-            const { project } = await projectResponse.json();
-            const scene = project.scenes.find(
-              (s: SceneWithMedia) => s.id === sceneId
-            );
-            setLocalScenes((prev) =>
-              prev.map((s) =>
-                s.id === sceneId
-                  ? { ...s, video_status: "completed", videos: scene?.videos ?? [] }
-                  : s
-              )
-            );
-          } else {
-            // Still mark as completed even if we can't get the project data
-            setLocalScenes((prev) =>
-              prev.map((s) =>
-                s.id === sceneId ? { ...s, video_status: "completed" } : s
-              )
-            );
-          }
+          await refreshProjectScenes();
           return;
         }
 
@@ -182,19 +190,26 @@ export function SceneVideoList({ projectId, scenes }: SceneVideoListProps) {
       const data = await response.json();
       const results = data.results || [];
 
+      // Optimistically mark all eligible scenes as processing.
+      setLocalScenes((prev) =>
+        prev.map((scene) =>
+          scene.image_status === "completed" &&
+          (scene.video_status === "pending" || scene.video_status === "failed")
+            ? { ...scene, video_status: "processing" }
+            : scene
+        )
+      );
+
       // Start polling for all scenes that had tasks created
       results.forEach((result: { sceneId: string; taskId?: string; videoId?: string; success: boolean }) => {
         if (result.success && result.taskId && result.videoId) {
-          setLocalScenes((prev) =>
-            prev.map((s) =>
-              s.id === result.sceneId ? { ...s, video_status: "processing" } : s
-            )
-          );
           pollForVideoCompletion(result.sceneId, result.taskId, result.videoId);
         }
       });
+      await refreshProjectScenes();
     } catch (error) {
       console.error("Failed to generate all videos:", error);
+      await refreshProjectScenes();
     } finally {
       setIsGeneratingAll(false);
     }

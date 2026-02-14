@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Check if Zhipu AI is configured
     if (!isZhipuConfigured()) {
       return NextResponse.json(
-        { error: "AI service is not configured. Please set ZHIPU_API_KEY." },
+        { error: "AI service is not configured. Please set DEEPSEEK_API_KEY." },
         { status: 503 }
       );
     }
