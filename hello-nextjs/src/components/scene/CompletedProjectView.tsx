@@ -8,6 +8,7 @@ import type { Scene, Image as ImageType, Video } from "@/types/database";
 type SceneWithMedia = Scene & { images: ImageType[]; videos: Video[] };
 
 interface CompletedProjectViewProps {
+  projectId: string;
   scenes: SceneWithMedia[];
   completedAt: string;
 }
@@ -17,12 +18,15 @@ interface CompletedProjectViewProps {
  * Displays all scene videos with download options.
  */
 export function CompletedProjectView({
+  projectId,
   scenes,
   completedAt,
 }: CompletedProjectViewProps) {
   const [selectedScene, setSelectedScene] = useState<SceneWithMedia | null>(
     scenes[0] ?? null
   );
+  const [isMergingFullVideo, setIsMergingFullVideo] = useState(false);
+  const [mergeError, setMergeError] = useState<string | null>(null);
 
   // Collect all storage paths for images and videos
   const storagePaths = useMemo(() => {
@@ -76,10 +80,40 @@ export function CompletedProjectView({
     }
   };
 
+  const handleDownloadFullVideo = async () => {
+    if (isMergingFullVideo) return;
+
+    setIsMergingFullVideo(true);
+    setMergeError(null);
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/full-video`, {
+        method: "POST",
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error ?? "合成完整视频失败");
+      }
+
+      const link = document.createElement("a");
+      link.href = data.url;
+      link.download = data.fileName ?? "full-video.mp4";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      setMergeError(error instanceof Error ? error.message : "合成完整视频失败");
+    } finally {
+      setIsMergingFullVideo(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Completion Info */}
-      <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900/50 dark:bg-green-900/20">
+      <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900/50 dark:bg-green-900/20">
+        <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
             <svg
@@ -105,25 +139,40 @@ export function CompletedProjectView({
             </p>
           </div>
         </div>
-        <button
-          onClick={handleDownloadAll}
-          className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          下载所有视频
-        </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              onClick={handleDownloadAll}
+              className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              下载所有分镜
+            </button>
+            <button
+              onClick={handleDownloadFullVideo}
+              disabled={isMergingFullVideo}
+              className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {isMergingFullVideo ? "合成中..." : "下载完整视频"}
+            </button>
+          </div>
+        </div>
+        {mergeError && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+            {mergeError}
+          </p>
+        )}
       </div>
 
       {/* Main Video Display */}
